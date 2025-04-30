@@ -1,0 +1,206 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Authentication</title>
+  <link rel="stylesheet" href="style.css"/>
+  <style>
+    body {
+  font-family: Arial, sans-serif;
+  background-image: url('loginbackground.jpg'); /* Replace with your image */
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-attachment: fixed; /* This makes the background image fixed */
+  height: 100vh;
+  margin: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Optional dark overlay for smoky effect */
+body::before {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(255, 255, 255, 0.70); /* smoky overlay */
+  z-index: 0;
+}
+
+/* Login form container */
+.container {
+  position: relative;
+  z-index: 1; /* Puts the form above the overlay */
+  background: rgba(255, 255, 255, 0.92);
+  padding: 2rem;
+  border-radius: 10px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+  width: 320px;
+  text-align: center;
+}
+
+    h2 {
+      margin-bottom: 1rem;
+      color: #333;
+    }
+    input {
+      width: 100%;
+      padding: 10px;
+      margin: 8px 0;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+    button {
+      width: 100%;
+      padding: 10px;
+      background: #2980b9;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    button:hover {
+      background: #2471a3;
+    }
+    p {
+      margin-top: 1rem;
+    }
+    a {
+      color: #2980b9;
+      cursor: pointer;
+      text-decoration: none;
+    }
+    a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div id="login">
+      <h2>Login</h2>
+      <input type="text" id="login-email" placeholder="Username" />
+      <input type="password" id="login-password" placeholder="Password" />
+      <!-- <input type="email" id="login-email" placeholder="email" /> -->
+      <button onclick="login()">Login</button>
+      <p>Don't have an account? <a onclick="showSignup()">Sign up</a></p>
+    </div>
+
+    <div id="signup" style="display: none;">
+      <h2>Signup</h2>
+      <input type="text" id="signup-email" placeholder="username" />
+      <input type="password" id="signup-password" placeholder="Password" />
+
+      <button onclick="signup()">Signup</button>
+      <p>Already have an account? <a onclick="showLogin()">Login</a></p>
+    </div>
+
+    <div id="dashboard" style="display: none;">
+      <h2>Welcome, <span id="user-email"></span></h2>
+      <button onclick="logout()">Logout</button>
+    </div>
+  </div>
+
+  <script>
+    function showSignup() {
+      document.getElementById('login').style.display = 'none';
+      document.getElementById('signup').style.display = 'block';
+    }
+
+    function showLogin() {
+      document.getElementById('signup').style.display = 'none';
+      document.getElementById('login').style.display = 'block';
+    }
+function signup() {
+  const email = document.getElementById('signup-email').value.trim();
+  const password = document.getElementById('signup-password').value;
+
+  const passwordPolicy = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,}$/;
+
+  if (!email || !password) {
+    alert("Username and password are required.");
+    return;
+  }
+
+  if (!passwordPolicy.test(password)) {
+    alert(`Password must be at least 8 characters and include:
+- one uppercase letter,
+- one lowercase letter,
+- one number,
+- one special character.`);
+    return;
+  }
+
+  const signupData = {
+    username: email,
+    password: password,
+    email: "email@gmail.com" // Or dynamically collect if needed
+  };
+
+  fetch('https://xy0fxfl1ka.execute-api.us-east-1.amazonaws.com/stage/sign-up', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(signupData)
+  })
+  .then(async (res) => {
+    const data = await res.json();
+
+    const errorMessage = data?.error || data?.body?.error || data?.message;
+
+    if (!res.ok || errorMessage) {
+      alert(errorMessage || "Signup failed. User may already exist.");
+      return;
+    }
+
+    alert('Signup successful! Now please log in.');
+    showLogin();
+  })
+  .catch((err) => {
+    console.error('Signup error:', err);
+    alert('Signup failed. Please try again.');
+  });
+}
+
+    function login() {
+      const email = document.getElementById('login-email').value;
+      const password = document.getElementById('login-password').value;
+
+      const loginData = {
+        username: email,
+        password: password
+      };
+
+      fetch('https://xy0fxfl1ka.execute-api.us-east-1.amazonaws.com/stage/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(loginData)
+      })
+      .then(res => res.json())
+      .then(data => {
+        const token = data.data.id_token;
+        if (!token) throw new Error("Token missing in response");
+
+        localStorage.setItem('token', token);
+        window.location.href = "news.html";
+      })
+      .catch(err => {
+        console.error('Login failed:', err);
+        alert('Login failed. Check your credentials.');
+      });
+    }
+
+    function logout() {
+      localStorage.removeItem('token');
+      document.getElementById('dashboard').style.display = 'none';
+      document.getElementById('login').style.display = 'block';
+    }
+  </script>
+</body>
+</html>
